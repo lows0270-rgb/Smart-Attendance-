@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attendance QR System</title>
+
+<!-- External Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 15px;
+    background: #2563eb;
+    color: white;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+input, select {
+    width: 100%;
+    padding: 11px;
+    margin: 7px 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+h2 {
+    margin-bottom: 18px;
+    color: #0f172a;
+}
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: #e2e8f0;
+}
+
+.login-box {
+    background: white;
+    width: 100%;
+    max-width: 420px;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.login-box h1 {
+    text-align: center;
+    margin-bottom: 5px;
+    color: #1d4ed8;
+    font-size: 24px;
+}
+
+.login-box p {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background: #0f172a;
+    color: white;
+    padding: 20px 10px;
+    flex-shrink: 0;
+}
+
+.sidebar h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+    color: #38bdf8;
+    text-align: center;
+}
+
+.sidebar button {
+    width: 100%;
+    display: block;
+    text-align: left;
+    margin: 4px 0;
+    background: transparent;
+    color: #94a3b8;
+    font-weight: normal;
+    padding: 10px 14px;
+}
+
+.sidebar button:hover,
+.sidebar button.active {
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: bold;
+    border-left: 4px solid #38bdf8;
+}
+
+.main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    background: white;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    gap: 10px;
+}
+
+.content {
+    padding: 25px;
+    flex: 1;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card h1 {
+    color: #1d4ed8;
+    font-size: 28px;
+}
+
+.panel {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 14px;
+}
+
+th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.Present { background: #dcfce7; color: #15803d; }
+.Late { background: #fef3c7; color: #a16207; }
+.Absent { background: #fee2e2; color: #b91c1c; }
+.Excused { background: #dbeafe; color: #1d4ed8; }
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.danger { background: #dc2626; }
+.danger:hover { background: #b91c1c; }
+.success { background: #16a34a; }
+.success:hover { background: #15803d; }
+.warning { background: #d97706; }
+.warning:hover { background: #b45309; }
+.gray { background: #64748b; }
+.gray:hover { background: #475569; }
+
+#qrBox, .qrContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    margin: 15px 0;
+    min-height: 200px;
+}
+
+.notification {
+    padding: 12px;
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.student-profile {
+    text-align: center;
+    padding: 25px;
+}
+
+.student-profile img, .student-profile table {
+    margin: 0 auto;
+}
+
+.scanner-box {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#reader, #adminReader {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+}
+
+.scan-result-alert {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    margin-top: 15px;
+    text-align: center;
+}
+
+@media(max-width:800px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .sidebar button {
+        display: inline-block;
+        width: auto;
+    }
+
+    .content {
+        padding: 15px;
+    }
+
+    .topbar {
+        flex-wrap: wrap;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-container">
+    <div class="login-box">
+        <h1>SMART ATTENDANCE</h1>
+        <p>QR Code Student Attendance System</p>
+
+        <div id="qrLoginNotice" class="notification hidden">
+            📍 Attendance QR detected! Please login to confirm your attendance.
+        </div>
+
+        <label>Login As</label>
+        <select id="loginRole">
+            <option value="student">Student</option>
+            <option value="admin">Administrator</option>
+        </select>
+
+        <input id="loginID" placeholder="Student ID / Username">
+        <input id="loginPassword" type="password" placeholder="Password">
+
+        <button style="width:100%" onclick="login()">LOGIN</button>
+        <br><br>
+        <button class="success" style="width:100%" onclick="showRegistration()">REGISTER AS STUDENT</button>
+        <br><br>
+        <small style="display:block; text-align:center; color:#64748b;">Administrator demo: <b>admin</b> / <b>admin123</b></small>
+    </div>
+</div>
+
+<!-- STUDENT REGISTRATION -->
+<div id="registrationScreen" class="login-container hidden">
+    <div class="login-box">
+        <h1>Student Registration</h1>
+        <p>Create your student account</p>
+
+        <input id="regName" placeholder="Full Name">
+        <input id="regID" placeholder="Student ID (e.g. 2026-0001)">
+
+        <select id="regGrade">
+            <option value="">Select Grade Level</option>
+            <option>Grade 7</option>
+            <option>Grade 8</option>
+            <option>Grade 9</option>
+            <option>Grade 10</option>
+            <option>Grade 11</option>
+            <option>Grade 12</option>
+        </select>
+
+        <input id="regSection" placeholder="Section">
+        <input id="regPassword" type="password" placeholder="Create Password">
+
+        <button style="width:100%" onclick="registerStudent()">CREATE ACCOUNT</button>
+        <br><br>
+        <button class="gray" style="width:100%" onclick="backLogin()">BACK TO LOGIN</button>
+    </div>
+</div>
+
+<!-- MAIN APPLICATION -->
+<div id="application" class="layout hidden">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>📚 SMART ATTENDANCE</h2>
+
+        <!-- ADMIN MENU -->
+        <div id="adminMenu">
+            <button onclick="showPage('dashboard',this)">📊 Dashboard</button>
+            <button onclick="showPage('adminScannerPage',this)">📷 Scan Student Badge</button>
+            <button onclick="showPage('qrAttendance',this)">📢 Broadcast Class QR</button>
+            <button onclick="showPage('liveAttendance',this)">🔴 Live Attendance</button>
+            <button onclick="showPage('students',this)">👨‍🎓 Student List & QRs</button>
+            <button onclick="showPage('classes',this)">🏫 Classes & Sections</button>
+            <button onclick="showPage('records',this)">📋 Daily Records</button>
+            <button onclick="showPage('monthly',this)">📅 Monthly Records</button>
+            <button onclick="showPage('reports',this)">📈 Reports</button>
+            <button onclick="showPage('lateStudents',this)">⏰ Late Students</button>
+            <button onclick="showPage('notifications',this)">🔔 Notifications</button>
+            <button onclick="showPage('logs',this)">📝 Activity Logs</button>
+            <button onclick="showPage('settings',this)">⚙️ Settings</button>
+            <button onclick="showPage('backup',this)">💾 Backup & Restore</button>
+        </div>
+
+        <!-- STUDENT MENU -->
+        <div id="studentMenu" class="hidden">
+            <button onclick="showPage('studentHome',this)">🏠 My Dashboard</button>
+            <button onclick="showPage('myQR',this)">📱 My QR Code</button>
+            <button onclick="showPage('scanQR',this)">📷 Scan Class QR</button>
+            <button onclick="showPage('myRecords',this)">📋 My Attendance</button>
+            <button onclick="showPage('myNotifications',this)">🔔 Notifications</button>
+            <button onclick="showPage('myProfile',this)">👤 My Profile</button>
+        </div>
+
+        <br>
+        <button class="danger" onclick="logout()">LOGOUT</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        <div class="topbar">
+            <h3 id="pageTitle">Dashboard</h3>
+            <div>
+                <span id="currentUser" style="font-weight:bold; margin-right:15px; color:#1d4ed8;"></span>
+                <span id="clock" style="color:#64748b; font-size:14px;"></span>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- ADMIN DASHBOARD -->
+            <section id="dashboard" class="page">
+                <h2>Administrator Dashboard</h2>
+
+                <div class="cards">
+                    <div class="card">
+                        <h3>Total Registered</h3>
+                        <h1 id="totalStudents">0</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Present Today</h3>
+                        <h1 id="totalPresent">0</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Late Today</h3>
+                        <h1 id="totalLate">0</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Absent Today</h3>
+                        <h1 id="totalAbsent">0</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Attendance Rate</h3>
+                        <h1 id="attendancePercent">0%</h1>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Today's Attendance Summary</h3>
+                    <canvas id="attendanceChart" style="max-height: 250px;"></canvas>
+                </div>
+
+                <div class="panel">
+                    <h3>Recent Attendance Logs</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivities"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ADMIN SCANNER PAGE -->
+            <section id="adminScannerPage" class="page hidden">
+                <h2>Scan Student ID Badges</h2>
+                <div class="panel scanner-box">
+                    <p>Use this camera scanner to scan student personal QR code badges as they arrive.</p>
+                    <br>
+                    <button id="startAdminScanBtn" onclick="startAdminScanner()">START BADGE SCANNER</button>
+                    <button class="danger" onclick="stopAdminScanner()">STOP SCANNER</button>
+                    <br><br>
+                    <div id="adminReader"></div>
+                    <div id="adminScanResult"></div>
+                </div>
+            </section>
+
+            <!-- BROADCAST QR ATTENDANCE -->
+            <section id="qrAttendance" class="page hidden">
+                <h2>Classroom QR Code Generator</h2>
+                <div class="panel" style="text-align: center;">
+                    <h3>Generate Classroom Attendance QR Code</h3>
+                    <p>Display this QR code on a screen/projector so students can scan it using their mobile devices.</p>
+                    <br>
+                    <button class="success" onclick="generateAttendanceQR()">GENERATE NEW QR CODE</button>
+                    <div id="qrBox">
+                        <span style="color:#94a3b8">Click the button above to generate a QR code.</span>
+                    </div>
+                    <p id="qrExpiry" style="color: #64748b; font-size: 13px;"></p>
+                </div>
+            </section>
+
+            <!-- LIVE ATTENDANCE -->
+            <section id="liveAttendance" class="page hidden">
+                <h2>Live Attendance Monitor</h2>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Student ID</th>
+                                <th>Grade</th>
+                                <th>Section</th>
+                                <th>Time Logged</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- STUDENT MANAGEMENT -->
+            <section id="students" class="page hidden">
+                <h2>Student Management & QR Badges</h2>
+
+                <div class="panel">
+                    <h3>Add New Student Account</h3>
+                    <div class="form-grid">
+                        <input id="newName" placeholder="Student Name">
+                        <input id="newID" placeholder="Student ID">
+                        <input id="newGrade" placeholder="Grade Level">
+                        <input id="newSection" placeholder="Section">
+                        <input id="newPassword" placeholder="Password">
+                    </div>
+                    <button onclick="addStudent()">ADD STUDENT</button>
+                    <button class="success" onclick="exportStudents()">EXPORT STUDENTS CSV</button>
+                </div>
+
+                <div class="panel">
+                    <h3>Registered Students List</h3>
+                    <input id="studentSearch" placeholder="Search student by name or ID..." oninput="renderStudents()">
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Grade</th>
+                                <th>Section</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CLASSES -->
+            <section id="classes" class="page hidden">
+                <h2>Class & Section Management</h2>
+                <div class="panel">
+                    <h3>Create Class / Section</h3>
+                    <div class="form-grid">
+                        <input id="classGrade" placeholder="Grade Level">
+                        <input id="classSection" placeholder="Section Name">
+                        <input id="classAdviser" placeholder="Class Adviser">
+                        <input id="classSchedule" placeholder="Schedule">
+                    </div>
+                    <button onclick="addClass()">CREATE SECTION</button>
+                </div>
+
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Grade Level</th>
+                                <th>Section</th>
+                                <th>Students Enrolled</th>
+                                <th>Adviser</th>
+                                <th>Schedule</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- DAILY RECORDS -->
+            <section id="records" class="page hidden">
+                <h2>Daily Attendance Records</h2>
+                <div class="panel">
+                    <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+                        <input type="date" id="recordDate" style="width:auto;" onchange="renderRecords()">
+                        <input id="recordSearch" placeholder="Search student..." style="width:250px; margin:0;" oninput="renderRecords()">
+                        <button class="success" onclick="exportAttendance()">EXPORT CSV</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MONTHLY RECORDS -->
+            <section id="monthly" class="page hidden">
+                <h2>Monthly Attendance Summary</h2>
+                <div class="panel">
+                    <input type="month" id="monthFilter" style="width:auto; margin-bottom:15px;" onchange="renderMonthly()">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>ID</th>
+                                <th>Present</th>
+                                <th>Late</th>
+                                <th>Absent</th>
+                                <th>Excused</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlyTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- REPORTS -->
+            <section id="reports" class="page hidden">
+                <h2>Attendance Reports</h2>
+                <div class="panel">
+                    <div class="form-grid">
+                        <select id="reportType">
+                            <option value="daily">Daily Report</option>
+                            <option value="monthly">Monthly Report</option>
+                            <option value="late">Late Students Report</option>
+                        </select>
+                        <input type="date" id="reportDate">
+                        <button onclick="renderReports()">GENERATE REPORT</button>
+                    </div>
+                    <div id="reportResults" style="margin-top:20px;"></div>
+                </div>
+            </section>
+
+            <!-- LATE STUDENTS -->
+            <section id="lateStudents" class="page hidden">
+                <h2>Late Arrivals Log</h2>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Time Logged</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lateTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- NOTIFICATIONS -->
+            <section id="notifications" class="page hidden">
+                <h2>System Notifications</h2>
+                <div class="panel" id="adminNotifications"></div>
+            </section>
+
+            <!-- LOGS -->
+            <section id="logs" class="page hidden">
+                <h2>System Activity Logs</h2>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SETTINGS -->
+            <section id="settings" class="page hidden">
+                <h2>Attendance Cutoff Settings</h2>
+                <div class="panel" style="max-width:500px;">
+                    <label>Present Cutoff Time (HH:MM)</label>
+                    <input type="time" id="presentTime">
+
+                    <label>Late Cutoff Time (HH:MM)</label>
+                    <input type="time" id="lateTime">
+
+                    <label>School Name</label>
+                    <input id="schoolName" placeholder="School Name">
+
+                    <button onclick="saveSettings()">SAVE SETTINGS</button>
+                </div>
+            </section>
+
+            <!-- BACKUP -->
+            <section id="backup" class="page hidden">
+                <h2>Backup and Restore</h2>
+                <div class="panel">
+                    <p>Export or import system data in JSON format.</p>
+                    <br>
+                    <button onclick="backupData()">DOWNLOAD BACKUP</button>
+                    <br><br>
+                    <hr>
+                    <br>
+                    <input type="file" id="restoreFile" accept=".json" style="width:auto;">
+                    <button class="warning" onclick="restoreData()">RESTORE FROM FILE</button>
+                </div>
+            </section>
+
+            <!-- STUDENT HOME -->
+            <section id="studentHome" class="page hidden">
+                <h2>Welcome, <span id="studentWelcome"></span>!</h2>
+                <div class="cards">
+                    <div class="card">
+                        <h3>Attendance Rate</h3>
+                        <h1 id="myPercentage">0%</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Days Present</h3>
+                        <h1 id="myPresent">0</h1>
+                    </div>
+                    <div class="card">
+                        <h3>Days Late</h3>
+                        <h1 id="myLate">0</h1>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3>Today's Status</h3>
+                    <p id="myToday" style="font-size:18px; font-weight:bold; padding:10px 0;"></p>
+                </div>
+            </section>
+
+            <!-- STUDENT PERSONAL QR CODE -->
+            <section id="myQR" class="page hidden">
+                <h2>My Personal Attendance Badge QR</h2>
+                <div class="panel student-profile">
+                    <h3 id="myQRName" style="font-size:22px; color:#1d4ed8;"></h3>
+                    <p id="myQRID" style="color:#64748b; margin-bottom:15px;"></p>
+                    <div id="studentQR" class="qrContainer"></div>
+                    <p style="margin-top:15px; font-size:14px; color:#475569;">Show this QR code to your teacher/administrator to scan for your attendance badge check-in.</p>
+                    <br>
+                    <button onclick="window.print()">PRINT / SAVE QR</button>
+                </div>
+            </section>
+
+            <!-- STUDENT SCANNER PAGE -->
+            <section id="scanQR" class="page hidden">
+                <h2>Scan Classroom Attendance QR Code</h2>
+                <div class="panel scanner-box">
+                    <p>Scan the QR code displayed on the teacher's screen to record your attendance.</p>
+                    <br>
+                    <button onclick="startStudentScanner()">START CAMERA SCANNER</button>
+                    <button class="danger" onclick="stopStudentScanner()">STOP SCANNER</button>
+                    <br><br>
+                    <div id="reader"></div>
+                    <div id="scanMessage"></div>
+                </div>
+            </section>
+
+            <!-- STUDENT RECORDS -->
+            <section id="myRecords" class="page hidden">
+                <h2>My Attendance Log</h2>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time Logged</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myRecordsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- STUDENT NOTIFICATIONS -->
+            <section id="myNotifications" class="page hidden">
+                <h2>My Notifications</h2>
+                <div class="panel" id="studentNotifications"></div>
+            </section>
+
+            <!-- STUDENT PROFILE -->
+            <section id="myProfile" class="page hidden">
+                <h2>My Account Profile</h2>
+                <div class="panel" style="max-width:500px;">
+                    <p id="profileInfo" style="margin-bottom:15px; font-weight:bold;"></p>
+                    <label>Update Full Name</label>
+                    <input id="profileName" placeholder="Update Name">
+                    <button onclick="updateProfile()">UPDATE PROFILE</button>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "admin123";
+
+let students = readStore("students", [
+    { name: "John Doe", id: "2026-0001", grade: "Grade 10", section: "Einstein", password: "123", active: true }
+]);
+let attendance = readStore("attendance", []);
+let classes = readStore("classes", []);
+let logs = readStore("logs", []);
+let notifications = readStore("notifications", []);
+let settings = readStore("settings", { presentTime: "07:30", lateTime: "07:45", schoolName: "Smart Academy" });
+
+let currentUser = null;
+let activeAttendanceToken = "";
+let studentScannerObj = null;
+let adminScannerObj = null;
+let chartInstance = null;
+
+function readStore(key, fallback) {
+    try {
+        const val = localStorage.getItem(key);
+        return val ? JSON.parse(val) : fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function saveData() {
+    localStorage.setItem("students", JSON.stringify(students));
+    localStorage.setItem("attendance", JSON.stringify(attendance));
+    localStorage.setItem("classes", JSON.stringify(classes));
+    localStorage.setItem("logs", JSON.stringify(logs));
+    localStorage.setItem("notifications", JSON.stringify(notifications));
+    localStorage.setItem("settings", JSON.stringify(settings));
+}
+
+function today() {
+    const d = new Date();
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+}
+
+function timeNow() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function escapeHTML(str) {
+    return String(str || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
+function getStudent(id) {
+    return students.find(s => String(s.id).trim().toLowerCase() === String(id).trim().toLowerCase());
+}
+
+function logActivity(activity) {
+    logs.unshift({ date: today(), time: timeNow(), activity, user: currentUser?.name || "System" });
+    logs = logs.slice(0, 300);
+    saveData();
+}
+
+function notify(message, target = "admin", studentID = "") {
+    notifications.unshift({ message, target, studentID, date: today(), time: timeNow() });
+    notifications = notifications.slice(0, 200);
+    saveData();
+}
+
+function byId(id) { return document.getElementById(id); }
+function val(id) { return byId(id)?.value?.trim() || ""; }
+
+function showRegistration() {
+    byId("loginScreen").classList.add("hidden");
+    byId("registrationScreen").classList.remove("hidden");
+}
+
+function backLogin() {
+    byId("registrationScreen").classList.add("hidden");
+    byId("loginScreen").classList.remove("hidden");
+}
+
+function registerStudent() {
+    const name = val("regName"), id = val("regID"), grade = val("regGrade"),
+          section = val("regSection"), password = byId("regPassword").value.trim();
+
+    if (!name || !id || !grade || !section || !password) return alert("Please fill out all registration fields.");
+    if (getStudent(id)) return alert("Student ID already registered.");
+
+    students.push({ name, id, grade, section, password, active: true });
+    saveData();
+    logActivity("Registered student: " + name);
+    alert("Registration successful! Please log in.");
+    backLogin();
+}
+
+function login() {
+    const role = val("loginRole");
+    const id = val("loginID");
+    const password = byId("loginPassword").value.trim();
+
+    if (!id || !password) return alert("Please enter login credentials.");
+
+    if (role === "admin") {
+        if (id !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+            return alert("Invalid Admin credentials.");
+        }
+        currentUser = { role: "admin", id: ADMIN_USERNAME, name: "Administrator" };
+    } else {
+        const student = getStudent(id);
+        if (!student || student.password !== password) return alert("Invalid Student ID or password.");
+        if (student.active === false) return alert("Student account disabled.");
+        currentUser = { role: "student", id: student.id, name: student.name };
+    }
+
+    byId("loginScreen").classList.add("hidden");
+    byId("application").classList.remove("hidden");
+    byId("currentUser").textContent = currentUser.name;
+
+    byId("adminMenu").classList.toggle("hidden", currentUser.role !== "admin");
+    byId("studentMenu").classList.toggle("hidden", currentUser.role !== "student");
+
+    logActivity("User logged in: " + currentUser.name);
+    showPage(currentUser.role === "admin" ? "dashboard" : "studentHome");
+}
+
+function logout() {
+    stopStudentScanner();
+    stopAdminScanner();
+    currentUser = null;
+    byId("application").classList.add("hidden");
+    byId("loginScreen").classList.remove("hidden");
+    byId("loginID").value = "";
+    byId("loginPassword").value = "";
+}
+
+function showPage(pageId, btn) {
+    if (!currentUser) return;
+    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+    const page = byId(pageId);
+    if (page) page.classList.remove("hidden");
+
+    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+
+    const titleMap = {
+        dashboard: "Dashboard", adminScannerPage: "Admin Scanner", qrAttendance: "Broadcast QR",
+        liveAttendance: "Live Attendance", students: "Student Management", classes: "Classes & Sections",
+        records: "Attendance Records", monthly: "Monthly Summary", reports: "Reports",
+        lateStudents: "Late Log", notifications: "Notifications", logs: "System Activity",
+        settings: "Settings", backup: "Backup & Restore", studentHome: "Student Dashboard",
+        myQR: "My QR Badge", scanQR: "Scan Classroom QR", myRecords: "My Attendance Log",
+        myNotifications: "Notifications", myProfile: "Profile"
+    };
+
+    byId("pageTitle").textContent = titleMap[pageId] || "Smart Attendance";
+
+    if (pageId !== "scanQR") stopStudentScanner();
+    if (pageId !== "adminScannerPage") stopAdminScanner();
+
+    if (pageId === "dashboard") renderDashboard();
+    if (pageId === "students") renderStudents();
+    if (pageId === "classes") renderClasses();
+    if (pageId === "records") renderRecords();
+    if (pageId === "monthly") renderMonthly();
+    if (pageId === "liveAttendance") renderLive();
+    if (pageId === "lateStudents") renderLate();
+    if (pageId === "notifications") renderNotifications();
+    if (pageId === "logs") renderLogs();
+    if (pageId === "studentHome") renderStudentHome();
+    if (pageId === "myQR") renderMyQR();
+    if (pageId === "myRecords") renderMyRecords();
+    if (pageId === "myNotifications") renderStudentNotifications();
+    if (pageId === "myProfile") renderProfile();
+}
+
+function evaluateStatus() {
+    const now = new Date();
+    const curTime = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+    if (curTime <= (settings.presentTime || "07:30")) return "Present";
+    return "Late";
+}
+
+function recordAttendanceForStudent(studentID, remark = "Scanned") {
+    const s = getStudent(studentID);
+    if (!s) throw new Error("Student record not found for ID: " + studentID);
+
+    const alreadyMarked = attendance.some(a => String(a.studentID) === String(s.id) && a.date === today());
+    if (alreadyMarked) throw new Error(`${s.name} (${s.id}) has already recorded attendance today!`);
+
+    const status = evaluateStatus();
+    const newRecord = {
+        student: s.name,
+        studentID: s.id,
+        grade: s.grade,
+        section: s.section,
+        date: today(),
+        time: timeNow(),
+        status: status,
+        remarks: remark
+    };
+
+    attendance.unshift(newRecord);
+    saveData();
+    logActivity(`Attendance logged: ${s.name} (${status})`);
+    notify(`Attendance marked (${status}) for ${s.name}`, "student", s.id);
+    return { student: s, status };
+}
+
+/* ADMIN BADGE SCANNER */
+async function startAdminScanner() {
+    if (typeof Html5Qrcode === "undefined") return alert("Scanner library loading error.");
+    stopAdminScanner();
+    adminScannerObj = new Html5Qrcode("adminReader");
+
+    try {
+        await adminScannerObj.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                let cleanID = decodedText.trim();
+                if (cleanID.startsWith("STUDENT:")) {
+                    cleanID = cleanID.replace("STUDENT:", "").trim();
+                }
+                try {
+                    const res = recordAttendanceForStudent(cleanID, "Scanned by Admin");
+                    byId("adminScanResult").innerHTML = `
+                        <div class="scan-result-alert Present">
+                            ✅ Marked ${res.status}: ${res.student.name} (${res.student.id})
+                        </div>`;
+                } catch (err) {
+                    byId("adminScanResult").innerHTML = `
+                        <div class="scan-result-alert Absent">
+                            ⚠️ ${err.message}
+                        </div>`;
+                }
+            },
+            () => {}
+        );
+    } catch (err) {
+        alert("Camera error: " + err);
+    }
+}
+
+async function stopAdminScanner() {
+    if (adminScannerObj) {
+        try {
+            if (adminScannerObj.isScanning) await adminScannerObj.stop();
+            await adminScannerObj.clear();
+        } catch (e) {}
+        adminScannerObj = null;
+    }
+}
+
+/* BROADCAST QR LOGIC */
+function generateAttendanceQR() {
+    activeAttendanceToken = "ATTEND:" + today() + ":" + Math.random().toString(36).substring(2, 9);
+    byId("qrBox").innerHTML = "";
+    new QRCode(byId("qrBox"), {
+        text: activeAttendanceToken,
+        width: 200,
+        height: 200
+    });
+    byId("qrExpiry").textContent = "Active for current session today: " + today();
+}
+
+/* STUDENT SCANNER FOR CLASS QR */
+async function startStudentScanner() {
+    if (typeof Html5Qrcode === "undefined") return alert("Scanner library standard error.");
+    stopStudentScanner();
+    studentScannerObj = new Html5Qrcode("reader");
+
+    try {
+        await studentScannerObj.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                if (!activeAttendanceToken || decodedText !== activeAttendanceToken) {
+                    byId("scanMessage").innerHTML = `<div class="scan-result-alert Absent">❌ Invalid or Expired Broadcast QR</div>`;
+                    return;
+                }
+                try {
+                    const res = recordAttendanceForStudent(currentUser.id, "Self Class Scan");
+                    byId("scanMessage").innerHTML = `<div class="scan-result-alert Present">✅ Attendance Recorded: ${res.status}</div>`;
+                    stopStudentScanner();
+                } catch (e) {
+                    byId("scanMessage").innerHTML = `<div class="scan-result-alert Absent">⚠️ ${e.message}</div>`;
+                }
+            },
+            () => {}
+        );
+    } catch (err) {
+        alert("Camera permission/hardware error: " + err);
+    }
+}
+
+async function stopStudentScanner() {
+    if (studentScannerObj) {
+        try {
+            if (studentScannerObj.isScanning) await studentScannerObj.stop();
+            await studentScannerObj.clear();
+        } catch (e) {}
+        studentScannerObj = null;
+    }
+}
+
+/* STUDENT PERSONAL QR GENERATION */
+function renderMyQR() {
+    const s = getStudent(currentUser.id);
+    if (!s) return;
+    byId("myQRName").textContent = s.name;
+    byId("myQRID").textContent = "Student ID: " + s.id + " | " + s.grade + " - " + s.section;
+
+    const qrContainer = byId("studentQR");
+    qrContainer.innerHTML = "";
+    
+    // Generate QR Encoding payload "STUDENT:<ID>"
+    new QRCode(qrContainer, {
+        text: "STUDENT:" + s.id,
+        width: 200,
+        height: 200,
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+function addStudent() {
+    const name = val("newName"), id = val("newID"), grade = val("newGrade"),
+          section = val("newSection"), password = val("newPassword");
+
+    if (!name || !id || !grade || !section || !password) return alert("Fill out all student details.");
+    if (getStudent(id)) return alert("Student ID already exists.");
+
+    students.push({ name, id, grade, section, password, active: true });
+    saveData();
+    logActivity("Added student: " + name);
+    ["newName", "newID", "newGrade", "newSection", "newPassword"].forEach(i => byId(i).value = "");
+    renderStudents();
+}
+
+function renderStudents() {
+    const q = val("studentSearch").toLowerCase();
+    const filtered = students.filter(s => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q));
+
+    byId("studentTable").innerHTML = filtered.map(s => `
+        <tr>
+            <td><b>${escapeHTML(s.name)}</b></td>
+            <td>${escapeHTML(s.id)}</td>
+            <td>${escapeHTML(s.grade)}</td>
+            <td>${escapeHTML(s.section)}</td>
+            <td>${s.active !== false ? 'Active' : 'Disabled'}</td>
+            <td class="actions">
+                <button class="gray" onclick="viewBadgeQR('${encodeURIComponent(s.id)}')">View QR</button>
+                <button class="danger" onclick="deleteStudent('${encodeURIComponent(s.id)}')">Delete</button>
+            </td>
+        </tr>
+    `).join("") || `<tr><td colspan="6">No student records found.</td></tr>`;
+}
+
+function viewBadgeQR(encodedID) {
+    const s = getStudent(decodeURIComponent(encodedID));
+    if (!s) return;
+    alert(`Student Badge QR for ${s.name} (${s.id}) is active. They can view it on their account under "My QR Code".`);
+}
+
+function deleteStudent(encodedID) {
+    const id = decodeURIComponent(encodedID);
+    if (!confirm("Delete student account?")) return;
+    students = students.filter(s => s.id !== id);
+    saveData();
+    renderStudents();
+}
+
+function addClass() {
+    const grade = val("classGrade"), section = val("classSection"), adviser = val("classAdviser"), schedule = val("classSchedule");
+    if (!grade || !section) return alert("Enter Grade and Section.");
+    classes.push({ grade, section, adviser, schedule });
+    saveData();
+    renderClasses();
+}
+
+function renderClasses() {
+    byId("classTable").innerHTML = classes.map((c, i) => `
+        <tr>
+            <td>${escapeHTML(c.grade)}</td>
+            <td>${escapeHTML(c.section)}</td>
+            <td>${students.filter(s => s.grade === c.grade && s.section === c.section).length}</td>
+            <td>${escapeHTML(c.adviser)}</td>
+            <td>${escapeHTML(c.schedule)}</td>
+            <td><button class="danger" onclick="deleteClass(${i})">Remove</button></td>
+        </tr>
+    `).join("") || `<tr><td colspan="6">No sections added yet.</td></tr>`;
+}
+
+function deleteClass(i) {
+    classes.splice(i, 1);
+    saveData();
+    renderClasses();
+}
+
+function renderDashboard() {
+    const todayLogs = attendance.filter(a => a.date === today());
+    const presentCount = todayLogs.filter(a => a.status === "Present").length;
+    const lateCount = todayLogs.filter(a => a.status === "Late").length;
+    const totalCount = students.length;
+    const absentCount = Math.max(0, totalCount - (presentCount + lateCount));
+
+    byId("totalStudents").textContent = totalCount;
+    byId("totalPresent").textContent = presentCount;
+    byId("totalLate").textContent = lateCount;
+    byId("totalAbsent").textContent = absentCount;
+    byId("attendancePercent").textContent = totalCount ? Math.round(((presentCount + lateCount) / totalCount) * 100) + "%" : "0%";
+
+    byId("recentActivities").innerHTML = attendance.slice(0, 7).map(a => `
+        <tr>
+            <td>${escapeHTML(a.student)}</td>
+            <td>${escapeHTML(a.studentID)}</td>
+            <td>${escapeHTML(a.date)}</td>
+            <td>${escapeHTML(a.time)}</td>
+            <td><span class="badge ${a.status}">${a.status}</span></td>
+        </tr>
+    `).join("") || `<tr><td colspan="5">No attendance logged today.</td></tr>`;
+
+    if (typeof Chart !== "undefined" && byId("attendanceChart")) {
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(byId("attendanceChart"), {
+            type: 'bar',
+            data: {
+                labels: ['Present', 'Late', 'Absent'],
+                datasets: [{
+                    label: 'Count',
+                    data: [presentCount, lateCount, absentCount],
+                    backgroundColor: ['#16a34a', '#d97706', '#dc2626']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+}
+
+function renderLive() {
+    byId("liveTable").innerHTML = attendance.filter(a => a.date === today()).map(a => `
+        <tr>
+            <td>${escapeHTML(a.student)}</td>
+            <td>${escapeHTML(a.studentID)}</td>
+            <td>${escapeHTML(a.grade)}</td>
+            <td>${escapeHTML(a.section)}</td>
+            <td>${escapeHTML(a.time)}</td>
+            <td><span class="badge ${a.status}">${a.status}</span></td>
+        </tr>
+    `).join("") || `<tr><td colspan="6">No live attendance activity today.</td></tr>`;
+}
+
+function renderRecords() {
+    const d = byId("recordDate").value || today();
+    const q = val("recordSearch").toLowerCase();
+
+    const filtered = attendance.filter(a => a.date === d && (a.student.toLowerCase().includes(q) || a.studentID.toLowerCase().includes(q)));
+    byId("recordTable").innerHTML = filtered.map(a => `
+        <tr>
+            <td>${escapeHTML(a.student)}</td>
+            <td>${escapeHTML(a.studentID)}</td>
+            <td>${escapeHTML(a.date)}</td>
+            <td>${escapeHTML(a.time)}</td>
+            <td><span class="badge ${a.status}">${a.status}</span></td>
+            <td>${escapeHTML(a.remarks)}</td>
+            <td><button class="warning" onclick="changeStatus('${encodeURIComponent(a.studentID)}','${a.date}')">Edit</button></td>
+        </tr>
+    `).join("") || `<tr><td colspan="7">No records found.</td></tr>`;
+}
+
+function changeStatus(encodedID, dateStr) {
+    const id = decodeURIComponent(encodedID);
+    const rec = attendance.find(a => a.studentID === id && a.date === dateStr);
+    if (!rec) return;
+    const n = prompt("Enter new status (Present, Late, Absent, Excused):", rec.status);
+    if (["Present", "Late", "Absent", "Excused"].includes(n)) {
+        rec.status = n;
+        saveData();
+        renderRecords();
+    }
+}
+
+function renderMonthly() {
+    const m = byId("monthFilter").value || today().slice(0, 7);
+    byId("monthlyTable").innerHTML = students.map(s => {
+        const list = attendance.filter(a => a.studentID === s.id && a.date.startsWith(m));
+        return `
+            <tr>
+                <td>${escapeHTML(s.name)}</td>
+                <td>${escapeHTML(s.id)}</td>
+                <td>${list.filter(a => a.status === "Present").length}</td>
+                <td>${list.filter(a => a.status === "Late").length}</td>
+                <td>${list.filter(a => a.status === "Absent").length}</td>
+                <td>${list.filter(a => a.status === "Excused").length}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function renderReports() {
+    const t = val("reportType");
+    const d = byId("reportDate").value || today();
+    let res = attendance.slice();
+
+    if (t === "daily") res = res.filter(a => a.date === d);
+    if (t === "monthly") res = res.filter(a => a.date.startsWith(d.slice(0, 7)));
+    if (t === "late") res = res.filter(a => a.status === "Late");
+
+    byId("reportResults").innerHTML = `
+        <h4>Report Results (${res.length} Total Logs)</h4><br>
+        <table>
+            <thead><tr><th>Name</th><th>ID</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody>${res.map(a => `<tr><td>${escapeHTML(a.student)}</td><td>${escapeHTML(a.studentID)}</td><td>${escapeHTML(a.date)}</td><td>${escapeHTML(a.time)}</td><td>${a.status}</td></tr>`).join("")}</tbody>
+        </table>
+    `;
+}
+
+function renderLate() {
+    byId("lateTable").innerHTML = attendance.filter(a => a.status === "Late").map(a => `
+        <tr>
+            <td>${escapeHTML(a.student)}</td>
+            <td>${escapeHTML(a.studentID)}</td>
+            <td>${escapeHTML(a.date)}</td>
+            <td>${escapeHTML(a.time)}</td>
+        </tr>
+    `).join("") || `<tr><td colspan="4">No late students recorded.</td></tr>`;
+}
+
+function renderNotifications() {
+    byId("adminNotifications").innerHTML = notifications.filter(n => n.target === "admin").map(n => `
+        <div class="notification">
+            ${escapeHTML(n.message)} <br><small style="color:#64748b">${n.date} ${n.time}</small>
+        </div>
+    `).join("") || "No notifications.";
+}
+
+function renderStudentNotifications() {
+    byId("studentNotifications").innerHTML = notifications.filter(n => n.target === "student" && n.studentID === currentUser.id).map(n => `
+        <div class="notification">
+            ${escapeHTML(n.message)} <br><small style="color:#64748b">${n.date} ${n.time}</small>
+        </div>
+    `).join("") || "No notifications.";
+}
+
+function renderLogs() {
+    byId("logsTable").innerHTML = logs.map(l => `
+        <tr>
+            <td>${escapeHTML(l.date)}</td>
+            <td>${escapeHTML(l.time)}</td>
+            <td>${escapeHTML(l.activity)}</td>
+            <td>${escapeHTML(l.user)}</td>
+        </tr>
+    `).join("");
+}
+
+function renderStudentHome() {
+    const list = attendance.filter(a => a.studentID === currentUser.id);
+    const p = list.filter(a => a.status === "Present").length;
+    const l = list.filter(a => a.status === "Late").length;
+    byId("studentWelcome").textContent = currentUser.name;
+    byId("myPresent").textContent = p;
+    byId("myLate").textContent = l;
+    byId("myPercentage").textContent = list.length ? Math.round(((p + l) / list.length) * 100) + "%" : "0%";
+
+    const todaysLog = list.find(a => a.date === today());
+    byId("myToday").textContent = todaysLog ? `Status Today: ${todaysLog.status} (Logged at ${todaysLog.time})` : "No attendance status logged today.";
+}
+
+function renderMyRecords() {
+    byId("myRecordsTable").innerHTML = attendance.filter(a => a.studentID === currentUser.id).map(a => `
+        <tr>
+            <td>${escapeHTML(a.date)}</td>
+            <td>${escapeHTML(a.time)}</td>
+            <td><span class="badge ${a.status}">${a.status}</span></td>
+            <td>${escapeHTML(a.remarks)}</td>
+        </tr>
+    `).join("") || `<tr><td colspan="4">No attendance history found.</td></tr>`;
+}
+
+function renderProfile() {
+    const s = getStudent(currentUser.id);
+    if (!s) return;
+    byId("profileInfo").textContent = `ID: ${s.id} | Level: ${s.grade} | Section: ${s.section}`;
+    byId("profileName").value = s.name;
+}
+
+function updateProfile() {
+    const s = getStudent(currentUser.id);
+    const name = val("profileName");
+    if (s && name) {
+        s.name = name;
+        currentUser.name = name;
+        byId("currentUser").textContent = name;
+        saveData();
+        alert("Profile updated successfully!");
+    }
+}
+
+function saveSettings() {
+    settings.presentTime = val("presentTime") || "07:30";
+    settings.lateTime = val("lateTime") || "07:45";
+    settings.schoolName = val("schoolName") || "";
+    saveData();
+    alert("Settings saved!");
+}
+
+function exportCSV(filename, rows) {
+    if (!rows.length) return alert("No data available to export.");
+    const keys = Object.keys(rows[0]);
+    const csvContent = [keys.join(","), ...rows.map(r => keys.map(k => `"${String(r[k] || '').replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+function exportStudents() { exportCSV("students.csv", students); }
+function exportAttendance() { exportCSV("attendance.csv", attendance); }
+
+function backupData() {
+    const dump = { students, attendance, classes, logs, notifications, settings };
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "attendance-backup-" + today() + ".json";
+    link.click();
+}
+
+function restoreData() {
+    const file = byId("restoreFile").files[0];
+    if (!file) return alert("Please select a JSON backup file.");
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const dump = JSON.parse(e.target.result);
+            if (dump.students && dump.attendance) {
+                students = dump.students;
+                attendance = dump.attendance;
+                classes = dump.classes || [];
+                logs = dump.logs || [];
+                notifications = dump.notifications || [];
+                settings = dump.settings || settings;
+                saveData();
+                alert("Data successfully restored!");
+                location.reload();
+            }
+        } catch (err) {
+            alert("Invalid Backup file.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+function updateClock() {
+    if (byId("clock")) byId("clock").textContent = new Date().toLocaleString();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (byId("recordDate")) byId("recordDate").value = today();
+    if (byId("reportDate")) byId("reportDate").value = today();
+    if (byId("monthFilter")) byId("monthFilter").value = today().slice(0, 7);
+    if (byId("presentTime")) byId("presentTime").value = settings.presentTime || "07:30";
+    if (byId("lateTime")) byId("lateTime").value = settings.lateTime || "07:45";
+    if (byId("schoolName")) byId("schoolName").value = settings.schoolName || "";
+
+    setInterval(updateClock, 1000);
+    updateClock();
+});
+</script>
+</body>
+</html>
